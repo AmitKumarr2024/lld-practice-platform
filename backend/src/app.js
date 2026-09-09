@@ -19,7 +19,7 @@ function createApp() {
         const allowedOrigins = [
           "http://localhost:5173",
           "https://lld-practice-platform.vercel.app",
-          "https://lld-practice-platform-y1rz.vercel.app/"
+          "https://lld-practice-platform-y1rz.vercel.app"
         ];
 
         // Allow requests without an Origin header
