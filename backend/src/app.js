@@ -6,26 +6,42 @@ const problemRoutes = require("./routes/problem.routes");
 const attemptRoutes = require("./routes/attempt.routes");
 const evaluationRoutes = require("./routes/evaluation.routes");
 const adminRoutes = require("./routes/admin.routes");
-const { errorHandler, notFoundHandler } = require("./middleware/error.middleware");
+const {
+  errorHandler,
+  notFoundHandler,
+} = require("./middleware/error.middleware");
 
 function createApp() {
   const app = express();
-
   app.use(
     cors({
       origin: (origin, callback) => {
-        // Allow non-browser requests (no Origin header) and any configured origin.
-        if (!origin || env.clientUrls.includes(origin)) {
+        const allowedOrigins = [
+          "http://localhost:5173",
+          "https://lld-practice-platform-mqcd-aw1tfr4j4-amit-self.vercel.app",
+        ];
+
+        // Allow requests without an Origin header
+        if (!origin) {
           return callback(null, true);
         }
-        return callback(new Error("Not allowed by CORS"));
+
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+
+        return callback(new Error(`Not allowed by CORS: ${origin}`));
       },
       credentials: true,
-    })
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }),
   );
   app.use(express.json());
 
-  app.get("/api/health", (_req, res) => res.json({ success: true, message: "ok" }));
+  app.get("/api/health", (_req, res) =>
+    res.json({ success: true, message: "ok" }),
+  );
 
   app.use("/api/auth", authRoutes);
   app.use("/api/problems", problemRoutes);
