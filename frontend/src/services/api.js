@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL = import.meta.env.VITE_API_URL || "https://lld-practice-platform-mqcd-aw1tfr4j4-amit-self.vercel.app/api";
 
 function getToken() {
   return localStorage.getItem("lld_token");
