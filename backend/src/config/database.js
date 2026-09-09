@@ -16,7 +16,7 @@ async function connectDatabase() {
   }
   if (!cached.promise) {
     mongoose.set("strictQuery", true);
-    cached.promise = mongoose.connect(env.mongoUri).then((m) => {
+    cached.promise = mongoose.connect(env.MONGODB_URI).then((m) => {
       console.log(`[db] connected successfully`);
       return m;
     });
