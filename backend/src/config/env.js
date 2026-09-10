@@ -23,4 +23,9 @@ const env = {
   nodeEnv: process.env.NODE_ENV || "development",
 };
 
+console.log("[env] NODE_ENV:", env.nodeEnv);
+console.log("[env] CLIENT_URL:", env.clientUrls);
+console.log("[env] MONGODB_URI:", env.mongoUri ? "SET" : "MISSING");
+console.log("[env] JWT_SECRET:", env.jwtSecret ? "SET" : "MISSING");
+
 module.exports = { env };

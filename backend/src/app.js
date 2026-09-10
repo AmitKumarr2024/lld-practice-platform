@@ -17,79 +17,75 @@ const {
 function createApp() {
   const app = express();
 
-  /*
-   * ----------------------------------------------------
-   * CORS
-   * ----------------------------------------------------
-   */
+  // ----------------------------------------------------
+  // CORS
+  // ----------------------------------------------------
 
-  const allowedOrigins = ["http://localhost:5173", ...env.clientUrls]
+  const configuredOrigins = ["http://localhost:5173", ...(env.clientUrls || [])]
     .map((url) => url.trim().replace(/\/+$/, ""))
     .filter(Boolean);
 
-  console.log("[cors] allowed origins:", allowedOrigins);
+  console.log("[cors] configured origins:", configuredOrigins);
 
-  const corsOptions = {
-    origin: (origin, callback) => {
-      // Requests without Origin:
-      // Postman, curl, server-to-server, etc.
-      if (!origin) {
-        return callback(null, true);
-      }
+  const isAllowedOrigin = (origin) => {
+    // Requests without Origin
+    if (!origin) {
+      return true;
+    }
 
-      const normalizedOrigin = origin.trim().replace(/\/+$/, "");
+    const normalizedOrigin = origin.trim().replace(/\/+$/, "");
 
-      // Exact configured frontend URL
-      if (allowedOrigins.includes(normalizedOrigin)) {
-        console.log("[cors] allowed origin:", normalizedOrigin);
+    // Exact configured origins
+    if (configuredOrigins.includes(normalizedOrigin)) {
+      return true;
+    }
 
-        return callback(null, true);
-      }
+    // Allow Vercel frontend deployments
+    const isVercelFrontend =
+      /^https:\/\/lld-practice-platform(?:-[a-zA-Z0-9-]+)?\.vercel\.app$/.test(
+        normalizedOrigin,
+      );
 
-      // Allow Vercel deployments for this frontend project
-      if (
-        /^https:\/\/lld-practice-platform(?:-[a-zA-Z0-9-]+)?\.vercel\.app$/.test(
-          normalizedOrigin,
-        )
-      ) {
-        console.log("[cors] allowed Vercel origin:", normalizedOrigin);
-
-        return callback(null, true);
-      }
-
-      console.log("[cors] blocked origin:", normalizedOrigin);
-
-      return callback(new Error(`Not allowed by CORS: ${normalizedOrigin}`));
-    },
-
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-
-    allowedHeaders: ["Content-Type", "Authorization"],
-
-    optionsSuccessStatus: 204,
+    return isVercelFrontend;
   };
 
-  app.use(cors(corsOptions));
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        console.log("[cors] request origin:", origin || "NO_ORIGIN");
 
-  /*
-   * Explicit OPTIONS handler.
-   * This makes preflight behavior clear.
-   */
-  app.options(/.*/, cors(corsOptions));
+        if (isAllowedOrigin(origin)) {
+          console.log("[cors] allowed:", origin || "NO_ORIGIN");
 
-  /*
-   * ----------------------------------------------------
-   * BODY PARSER
-   * ----------------------------------------------------
-   */
+          return callback(null, true);
+        }
+
+        console.log("[cors] blocked:", origin);
+
+        return callback(new Error(`Not allowed by CORS: ${origin}`));
+      },
+
+      // JWT is sent through Authorization header,
+      // so cookies are not required.
+      credentials: false,
+
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+
+      allowedHeaders: ["Content-Type", "Authorization"],
+
+      optionsSuccessStatus: 204,
+    }),
+  );
+
+  // ----------------------------------------------------
+  // BODY PARSER
+  // ----------------------------------------------------
 
   app.use(express.json());
 
-  /*
-   * ----------------------------------------------------
-   * HEALTH
-   * ----------------------------------------------------
-   */
+  // ----------------------------------------------------
+  // HEALTH CHECK
+  // ----------------------------------------------------
 
   app.get("/api/health", (_req, res) => {
     res.status(200).json({
@@ -98,30 +94,21 @@ function createApp() {
     });
   });
 
-  /*
-   * ----------------------------------------------------
-   * ROUTES
-   * ----------------------------------------------------
-   */
+  // ----------------------------------------------------
+  // API ROUTES
+  // ----------------------------------------------------
 
   app.use("/api/auth", authRoutes);
-
   app.use("/api/problems", problemRoutes);
-
   app.use("/api/attempts", attemptRoutes);
-
   app.use("/api/evaluations", evaluationRoutes);
-
   app.use("/api/admin", adminRoutes);
 
-  /*
-   * ----------------------------------------------------
-   * ERROR HANDLING
-   * ----------------------------------------------------
-   */
+  // ----------------------------------------------------
+  // ERROR HANDLING
+  // ----------------------------------------------------
 
   app.use(notFoundHandler);
-
   app.use(errorHandler);
 
   return app;

@@ -1,8 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL;
-
-if (!API_URL) {
-  throw new Error("VITE_API_URL is not configured");
-}
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://lld-practice-platform-alpha.vercel.app/api";
 
 function getToken() {
   return localStorage.getItem("lld_token");
@@ -23,7 +21,13 @@ async function request(path, options = {}) {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+
+      ...(token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {}),
+
       ...(options.headers || {}),
     },
   });
@@ -41,7 +45,10 @@ export const api = {
   login: (email, password) =>
     request("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({
+        email,
+        password,
+      }),
     }),
 
   listProblems: () => request("/problems"),
@@ -51,7 +58,9 @@ export const api = {
   startAttempt: (problemId) =>
     request("/attempts", {
       method: "POST",
-      body: JSON.stringify({ problemId }),
+      body: JSON.stringify({
+        problemId,
+      }),
     }),
 
   listAttempts: () => request("/attempts"),
