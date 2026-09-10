@@ -23,70 +23,59 @@ function createApp() {
    * ----------------------------------------------------
    */
 
-  const configuredOrigins = ["http://localhost:5173", ...env.clientUrls]
+  const allowedOrigins = ["http://localhost:5173", ...env.clientUrls]
     .map((url) => url.trim().replace(/\/+$/, ""))
     .filter(Boolean);
 
-  console.log("[cors] configured origins:", configuredOrigins);
+  console.log("[cors] allowed origins:", allowedOrigins);
 
-  const isAllowedOrigin = (origin) => {
-    if (!origin) {
-      return true;
-    }
+  const corsOptions = {
+    origin: (origin, callback) => {
+      // Requests without Origin:
+      // Postman, curl, server-to-server, etc.
+      if (!origin) {
+        return callback(null, true);
+      }
 
-    const normalizedOrigin = origin.trim().replace(/\/+$/, "");
+      const normalizedOrigin = origin.trim().replace(/\/+$/, "");
 
-    // Exact configured origins
-    if (configuredOrigins.includes(normalizedOrigin)) {
-      return true;
-    }
+      // Exact configured frontend URL
+      if (allowedOrigins.includes(normalizedOrigin)) {
+        console.log("[cors] allowed origin:", normalizedOrigin);
 
-    /*
-     * Allow Vercel preview deployments belonging to this
-     * frontend project.
-     *
-     * Examples:
-     * https://lld-practice-platform-y1rz.vercel.app
-     * https://lld-practice-platform-abc123.vercel.app
-     * https://lld-practice-platform-git-main.vercel.app
-     */
-    const isVercelFrontend =
-      /^https:\/\/lld-practice-platform(?:-[a-zA-Z0-9-]+)?\.vercel\.app$/.test(
-        normalizedOrigin,
-      );
+        return callback(null, true);
+      }
 
-    if (isVercelFrontend) {
-      return true;
-    }
+      // Allow Vercel deployments for this frontend project
+      if (
+        /^https:\/\/lld-practice-platform(?:-[a-zA-Z0-9-]+)?\.vercel\.app$/.test(
+          normalizedOrigin,
+        )
+      ) {
+        console.log("[cors] allowed Vercel origin:", normalizedOrigin);
 
-    return false;
+        return callback(null, true);
+      }
+
+      console.log("[cors] blocked origin:", normalizedOrigin);
+
+      return callback(new Error(`Not allowed by CORS: ${normalizedOrigin}`));
+    },
+
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+
+    allowedHeaders: ["Content-Type", "Authorization"],
+
+    optionsSuccessStatus: 204,
   };
 
-  app.use(
-    cors({
-      origin: (origin, callback) => {
-        console.log("[cors] request origin:", origin || "NO_ORIGIN");
+  app.use(cors(corsOptions));
 
-        if (isAllowedOrigin(origin)) {
-          console.log("[cors] allowed:", origin || "NO_ORIGIN");
-
-          return callback(null, true);
-        }
-
-        console.log("[cors] blocked:", origin);
-
-        return callback(new Error(`Not allowed by CORS: ${origin}`));
-      },
-
-      credentials: true,
-
-      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-
-      allowedHeaders: ["Content-Type", "Authorization"],
-
-      optionsSuccessStatus: 204,
-    }),
-  );
+  /*
+   * Explicit OPTIONS handler.
+   * This makes preflight behavior clear.
+   */
+  app.options(/.*/, cors(corsOptions));
 
   /*
    * ----------------------------------------------------
@@ -98,12 +87,12 @@ function createApp() {
 
   /*
    * ----------------------------------------------------
-   * HEALTH CHECK
+   * HEALTH
    * ----------------------------------------------------
    */
 
   app.get("/api/health", (_req, res) => {
-    res.json({
+    res.status(200).json({
       success: true,
       message: "ok",
     });
@@ -111,7 +100,7 @@ function createApp() {
 
   /*
    * ----------------------------------------------------
-   * API ROUTES
+   * ROUTES
    * ----------------------------------------------------
    */
 

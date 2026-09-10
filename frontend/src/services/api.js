@@ -1,6 +1,8 @@
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://lld-practice-platform-alpha.vercel.app/api";
+const API_URL = import.meta.env.VITE_API_URL;
+
+if (!API_URL) {
+  throw new Error("VITE_API_URL is not configured");
+}
 
 function getToken() {
   return localStorage.getItem("lld_token");
