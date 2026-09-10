@@ -1,16 +1,22 @@
-const API_URL = import.meta.env.VITE_API_URL || "https://lld-practice-platform-beta.vercel.app/api"; // Default to production URL if not set
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://lld-practice-platform-alpha.vercel.app/api";
 
 function getToken() {
   return localStorage.getItem("lld_token");
 }
 
 export function setToken(token) {
-  if (token) localStorage.setItem("lld_token", token);
-  else localStorage.removeItem("lld_token");
+  if (token) {
+    localStorage.setItem("lld_token", token);
+  } else {
+    localStorage.removeItem("lld_token");
+  }
 }
 
 async function request(path, options = {}) {
   const token = getToken();
+
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
@@ -31,26 +37,54 @@ async function request(path, options = {}) {
 
 export const api = {
   login: (email, password) =>
-    request("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+    request("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
 
   listProblems: () => request("/problems"),
+
   getProblem: (id) => request(`/problems/${id}`),
 
   startAttempt: (problemId) =>
-    request("/attempts", { method: "POST", body: JSON.stringify({ problemId }) }),
+    request("/attempts", {
+      method: "POST",
+      body: JSON.stringify({ problemId }),
+    }),
+
   listAttempts: () => request("/attempts"),
+
   getAttempt: (id) => request(`/attempts/${id}`),
+
   saveDraft: (id, submission) =>
-    request(`/attempts/${id}`, { method: "PUT", body: JSON.stringify(submission) }),
-  submitAttempt: (id) => request(`/attempts/${id}/submit`, { method: "POST" }),
-  retryAttempt: (id) => request(`/attempts/${id}/retry`, { method: "POST" }),
+    request(`/attempts/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(submission),
+    }),
+
+  submitAttempt: (id) =>
+    request(`/attempts/${id}/submit`, {
+      method: "POST",
+    }),
+
+  retryAttempt: (id) =>
+    request(`/attempts/${id}/retry`, {
+      method: "POST",
+    }),
 
   getEvaluation: (attemptId) => request(`/evaluations/${attemptId}`),
+
   submitEvaluation: (attemptId, payload) =>
-    request(`/evaluations/${attemptId}`, { method: "POST", body: JSON.stringify(payload) }),
+    request(`/evaluations/${attemptId}`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 
   listAdminAttempts: () => request("/admin/attempts"),
+
   getAdminAttempt: (id) => request(`/admin/attempts/${id}`),
+
   listPendingReviews: () => request("/admin/reviews/pending"),
+
   listCompletedReviews: () => request("/admin/reviews/completed"),
 };
